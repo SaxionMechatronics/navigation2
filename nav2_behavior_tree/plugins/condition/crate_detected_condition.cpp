@@ -54,9 +54,9 @@ BT::NodeStatus CrateDetectedCondition::tick()
 {
 //   lock is used for thread safety
   std::lock_guard<std::mutex> lock(mutex_);
-  RCLCPP_WARNING_ONCE(get_logger(), "Crate detector has been ticked");
+  RCLCPP_WARN_ONCE(get_logger(), "Crate detector has been ticked");
 
-  CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
+  // CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
   if (crate_found) {
     // TODO(anyone): send nav to start pose
     // NOTE: already happens at the end of the callback
@@ -80,11 +80,13 @@ BT::NodeStatus CrateDetectedCondition::tick()
 void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  RCLCPP_WARNING_ONCE(get_logger(), "Crate detector callback is activated");
+  RCLCPP_WARN_ONCE(get_logger(), "Crate detector callback is activated");
 
   // define 360 degree in radians
   double fullcircle = 6.28319;  // rads
 
+
+// msg is a shared pointer. To get data out of it use "msg->ranges" instead of the "."
   // obtain ranges from message
   std::list<float> ranges[360] = {0.0};
   ranges = msg.ranges;  // in meters

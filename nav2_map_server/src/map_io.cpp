@@ -78,7 +78,7 @@ char * dirname(char * path)
     /* This assignment is ill-designed but the XPG specs require to
        return a string containing "." in any case no directory part is
        found and so a static and constant string is required.  */
-    path = const_cast<char *>(&dot[0]);
+    path = reinterpret_cast<char *>(dot);
   }
 
   return path;

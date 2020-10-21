@@ -42,7 +42,7 @@ Namespace: /parent_ns/local_ns
 | update_frequency | 5.0 | Costmap update frequency |
 | use_maximum | false | whether when combining costmaps to use the maximum cost or override |
 | plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
-| clearable_layers | ["obstacle_layer"] | Layers that may be cleared using the clearing service |
+| clearable_layers | ["obstacle_layer", "voxel_layer", "range_layer"] | Layers that may be cleared using the clearing service |
 
 **NOTE:** When `plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
@@ -419,6 +419,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | ----------| --------| ------------|
 | node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
 | autostart | false | Whether to transition nodes to active state on startup |
+| bond_timeout_ms | 4000 | Timeout for bond to fail if no heartbeat can be found, in milliseconds. If set to 0, it will be disabled. Must be larger than 300ms for stable bringup. |
 
 # map_server
 
@@ -629,8 +630,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| position | N/A | Position |
-| orientation | N/A | Orientation |
+| goal | N/A | Goal |
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
 

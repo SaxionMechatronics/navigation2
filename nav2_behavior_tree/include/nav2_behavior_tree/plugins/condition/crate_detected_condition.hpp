@@ -70,8 +70,8 @@ required outputs:
   }
 
 private:
-  laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
-  arange(float start, float end, float increment);
+  void laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
+  std::list<float> arange(float start, float end, float increment);
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;  // is this type right??
   std::string laser_topic_;
