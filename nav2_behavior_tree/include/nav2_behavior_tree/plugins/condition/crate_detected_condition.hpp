@@ -21,8 +21,12 @@
 #include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_broadcaster.h"
+
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
+
 
 namespace nav2_behavior_tree
 {
@@ -36,7 +40,6 @@ public:
   CrateDetectedCondition() = delete;
 
   BT::NodeStatus tick() override;
-
 /*
 required inputs:
     - mesures crate in x dimention,
@@ -71,13 +74,17 @@ required outputs:
 
 private:
   void laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
-  std::list<float> arange(float start, float end, float increment);
+  std::vector<float> arange(float start, float end, float increment);
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;  // is this type right??
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
   std::string laser_topic_;
   double crate_measure_legnth_;
   double crate_measure_width_;
-  bool is_crate_found_ = false;
+  double offset_;
+  bool is_crate_found_;
   std::mutex mutex_;
 };
 } // namespace nav2_behavior_tree
