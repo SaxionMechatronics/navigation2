@@ -38,13 +38,15 @@ CrateDetectedCondition::CrateDetectedCondition(
   laser_topic_("scan"),
   crate_measure_legnth_(0.60),
   crate_measure_width_(0.40),
-  offset_(2)
+  offset_(2),
+  tolerance_(0.02)
   // is_crate_found_(false)
 {
   getInput("laser_topic", laser_topic_);
   getInput("crate_measure_legnth", crate_measure_legnth_);
   getInput("crate_measure_width", crate_measure_width_);
   getInput("offset", offset_);
+  getInput("tolerance", tolerance_);
   // bool is_crate_found_ = false;
 
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -95,7 +97,7 @@ void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPt
   std::vector<float> y;  // in meters
 
   // convert polar to cartesian
-  for(long unsigned int i = 0; i <= thetha.size(); i++) {
+  for(long unsigned int i = 0; i <= (thetha.size()-1); i++) {
     float xc = msg->ranges[i] * cos(thetha[i]);
     float yc = msg->ranges[i] * sin(thetha[i]);
     x.push_back(xc);
@@ -145,7 +147,7 @@ void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPt
   // dydxs[0] are made from (y[1] - y[0])/(x[1] - x[0])
   // that means that deltas are made from 3 x/y pairs,
   // So the x/y pair in the middle is the absolute corner.
-  for(long unsigned int i = 0; i <= corner_locations.size(); i++) {
+  for(long unsigned int i = 0; i <= (corner_locations.size()-1); i++) {
     if(corner_locations[i] == !0) {
       x_locations_in_laser_frame.push_back(x[corner_locations[i]+1]);
       y_locations_in_laser_frame.push_back(y[corner_locations[i]+1]);
@@ -163,23 +165,23 @@ void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPt
   std::vector<std::string> frames_vector = tf_->getAllFrameNames();
   std::string world_frame_str;
   for(long unsigned int i = 0; i < frames_vector.size(); i++){
-    if(frames_vector[i].find("world") != std::string::npos){
+    if(frames_vector[i].find("map") != std::string::npos){
       world_frame_str = frames_vector[i];
     }
   }
 
   // NOTE: or should it be "x_location_in_laser_frame.size() -1"
-  for(long unsigned int i = 0; i <= x_locations_in_laser_frame.size(); i++) {
+  for(long unsigned int i = 0; i <= (x_locations_in_laser_frame.size()-1); i++) {
     // use pythagoras to calculate the distance between two corncers.
     double temp = sqrt(pow((x_locations_in_laser_frame[i+1]-x_locations_in_laser_frame[i]), 2 ) +
                        pow((y_locations_in_laser_frame[i+1]-y_locations_in_laser_frame[i]), 2 ));
 
-    if((crate_measure_width_ - 0.02) >= temp && temp <= (crate_measure_width_ + 0.02)) {                  // TODO(kevin): add xml argument for tolerance
+    if((crate_measure_width_ - tolerance_) >= temp && temp <= (crate_measure_width_ + tolerance_)) {
       x_middle_of_crate_front = (x_locations_in_laser_frame[i+1]+x_locations_in_laser_frame[i])/2;
-      y_middle_of_crate_front = (y_locations_in_laser_frame[i+1]+y_locations_in_laser_frame[i])/2;       // move crate_front_plane_in_scan_frame out of loop
+      y_middle_of_crate_front = (y_locations_in_laser_frame[i+1]+y_locations_in_laser_frame[i])/2;
 
-      crate_front_plane_in_scan_frame.header.frame_id = "laser_frame";
-      crate_front_plane_in_scan_frame.header.stamp = tf2_ros::toMsg(tf2::TimePointZero);
+      crate_front_plane_in_scan_frame.header.frame_id = "base_scan";
+      crate_front_plane_in_scan_frame.header.stamp = node_->now();                //tf2::TimePointZero);
 
       crate_front_plane_in_scan_frame.pose.position.x = x_middle_of_crate_front;
       crate_front_plane_in_scan_frame.pose.position.y = y_middle_of_crate_front;
@@ -188,10 +190,7 @@ void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPt
       crate_front_plane_in_scan_frame.pose.orientation.x = qt.x();
       crate_front_plane_in_scan_frame.pose.orientation.y = qt.y();
       crate_front_plane_in_scan_frame.pose.orientation.z = qt.z();
-      
-      // is_crate_found_ = true; // do not do this already, because the nav_goal is not posted yet!
-
-    } else if((crate_measure_legnth_ - 0.02) >= temp && temp <= (crate_measure_legnth_ + 0.02)) {          // TODO(kevin): add xml argument for tolerance
+    } else if((crate_measure_legnth_ - tolerance_) >= temp && temp <= (crate_measure_legnth_ + tolerance_)) {
       RCLCPP_WARN_ONCE(node_->get_logger(), "Long side of the crate found, drive around to the short side!");
       is_crate_found_ = false;
       // TODO(Kevin): break or exit callback
@@ -206,18 +205,18 @@ void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPt
   }
 
   if(is_crate_found_){
-
     // TODO(kevin): if tf_broadcast does not work, publish the tf and broadcast from other lifecicle node that is allowed to use rclcpp_node_
 
     // std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+    // static tf2_ros::TransformBroadcaster br;
     // tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(rclcpp_node_);
     // tf2_ros::TransformBroadcaster *tf_broadcaster_ = new TransformBroadcaster<rclcpp::Node::SharedPtr>(node_);
-    
+
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
     geometry_msgs::msg::TransformStamped tmp_tf_stamped;
 
-    tmp_tf_stamped.header.frame_id = "laser_frame";   // TODO(kevin): check frame name
-    tmp_tf_stamped.header.stamp = tf2_ros::toMsg(tf2::TimePointZero);
+    tmp_tf_stamped.header.frame_id = "base_scan";   // TODO(kevin): check frame name
+    tmp_tf_stamped.header.stamp = node_->now();                 // tf2::TimePointZero);
     tmp_tf_stamped.child_frame_id = "crate_frame";
     tmp_tf_stamped.transform.translation.set__x(crate_front_plane_in_scan_frame.pose.position.x);
     tmp_tf_stamped.transform.translation.set__y(crate_front_plane_in_scan_frame.pose.position.y);
@@ -226,7 +225,6 @@ void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPt
     tf_broadcaster_->sendTransform(tmp_tf_stamped);
   }
 
-
   /* TODO(Kevin)
      - get location of crate from tf tree
      - add offset
@@ -234,8 +232,6 @@ void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPt
      - publish nav_goal and let the robot drive to that nav_goal
      - uit elkaar halen van broadcasten en lookup transform
   */
-
-
   geometry_msgs::msg::PoseStamped nav_goal;
   tf_->transform<geometry_msgs::msg::PoseStamped>(crate_front_plane_in_scan_frame, nav_goal, world_frame_str, tf2::durationFromSec(0.0));
 

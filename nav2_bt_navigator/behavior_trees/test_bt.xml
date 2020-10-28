@@ -21,12 +21,13 @@
 <!-- at the end of the file the original structure can be found -->
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="10" name="CrateDetected">
-            <CrateDetected laser_topic="{/scan}" crate_measure_legnth="0.6" crate_measure_width="0.4" offset="2">
-            <FollowPath path="{path}" controller_id="FollowPath"/>   
+            <CrateDetected laser_topic="{/scan}" crate_measure_legnth="0.6" crate_measure_width="0.4" offset="2" tolerance="0.02"/>
+            <FollowPath path="{path}" controller_id="FollowPath"/>
           </RecoveryNode>
+        </RateController>
 <!-- end of added section -->
 
-        </RateController>
+
         <RecoveryNode number_of_retries="1" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPath"/>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>

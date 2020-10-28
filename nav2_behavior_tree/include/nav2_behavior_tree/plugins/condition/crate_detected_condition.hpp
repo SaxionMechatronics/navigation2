@@ -65,6 +65,9 @@ required outputs:
       BT::InputPort<std::string>("laser_topic_", 
       std::string("scan"), "laser scanner topic"),
 
+      BT::InputPort<std::string>("tolerance_", 
+      std::string("tolerance"), "Tolerance for crate location (in meters)"),
+
       // BT::InputPort<bool>(
         // "is_crate_found", false, "If the crate is found this will be true).
         // TODO(anyone): implement is_crate_found for faster sequence times
@@ -84,6 +87,7 @@ private:
   double crate_measure_legnth_;
   double crate_measure_width_;
   double offset_;
+  double tolerance_;
   bool is_crate_found_;
   std::mutex mutex_;
 };
