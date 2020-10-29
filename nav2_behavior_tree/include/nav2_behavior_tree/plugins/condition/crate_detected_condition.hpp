@@ -25,8 +25,8 @@
 #include "tf2_ros/transform_broadcaster.h"
 
 #include "sensor_msgs/msg/laser_scan.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
 
+#include "behaviortree_cpp_v3/condition_node.h"
 
 namespace nav2_behavior_tree
 {
@@ -40,33 +40,24 @@ public:
   CrateDetectedCondition() = delete;
 
   BT::NodeStatus tick() override;
-/*
-required inputs:
-    - mesures crate in x dimention,
-    - mesures crate in y direction,
-    - topic with laser scan data.
 
-required outputs:
-    - location of start position for docking to navigate to.
-    - maby: crate found yes or no,
-*/
   static BT::PortsList providedPorts()
   {
-    return {
-      BT::InputPort<double>("crate_measure_legnth", 0.6,
-      "Length of the crate to search for (in meters"),
+    return{
+      // BT::InputPort<double>("crate_measure_legnth", 0.6,
+      // "Length of the crate to search for (in meters"),
 
-      BT::InputPort<double>("crate_measure_width", 0.4,
-      "Width of the crate to search for (in meters)"),
+      // BT::InputPort<double>("crate_measure_width", 0.4,
+      // "Width of the crate to search for (in meters)"),
 
-      BT::InputPort<double>("offset", 2,
-      "Offset of nav_goal to crate (in meters)"),
+      // BT::InputPort<double>("offset", 2,
+      // "Offset of nav_goal to crate (in meters)"),
 
-      BT::InputPort<std::string>("laser_topic_", 
-      std::string("scan"), "laser scanner topic"),
+      // BT::InputPort<std::string>("laser_topic_", 
+      // std::string("scan"), "laser scanner topic"),
 
-      BT::InputPort<std::string>("tolerance_", 
-      std::string("tolerance"), "Tolerance for crate location (in meters)"),
+      // BT::InputPort<std::string>("tolerance_", 
+      // std::string("tolerance"), "Tolerance for crate location (in meters)"),
 
       // BT::InputPort<bool>(
         // "is_crate_found", false, "If the crate is found this will be true).
@@ -76,61 +67,30 @@ required outputs:
   }
 
 private:
-  void laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
-  std::vector<float> arange(float start, float end, float increment);
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;  // is this type right??
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  // void laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
+  // std::vector<float> arange(float start, float end, float increment);
+  // std::vector<geometry_msgs::msg::Vector3> polarToCartesian(sensor_msgs::msg::LaserScan::SharedPtr msg);
+  // std::vector<geometry_msgs::msg::Vector3> findCorners(std::vector<geometry_msgs::msg::Vector3> cartesian_sensor_data);
+  geometry_msgs::msg::PoseStamped findCrate(std::vector<geometry_msgs::msg::Vector3> corner_locations_in_laser_frame);
+  // void broadcastCrateToTFTree(geometry_msgs::msg::PoseStamped);
+  // void publishNavGoal(geometry_msgs::msg::PoseStamped);
 
-  std::string laser_topic_;
-  double crate_measure_legnth_;
-  double crate_measure_width_;
-  double offset_;
-  double tolerance_;
-  bool is_crate_found_;
+  rclcpp::Node::SharedPtr node_;
+  // rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;  // is this type right??
+  // std::shared_ptr<tf2_ros::Buffer> tf_;
+  // std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+  // std::string laser_topic_;
+  // geometry_msgs::msg::PoseStamped nav_goal_;
+  // geometry_msgs::msg::PoseStamped crate_front_pose_;
+  // double crate_measure_legnth_;
+  // double crate_measure_width_;
+  // double offset_;
+  // // double tolerance_;
+  // bool is_crate_found_;
+  // bool broadcast_crate_;
   std::mutex mutex_;
 };
 } // namespace nav2_behavior_tree
 
 #endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__CRATE_DETECTED_CONDITION_HPP_
-
-
-// TODO(anyone): Delete example class later!
-// class IsBatteryLowCondition : public BT::ConditionNode
-// {
-// public:
-//   IsBatteryLowCondition(
-//     const std::string & condition_name,
-//     const BT::NodeConfiguration & conf);
-
-//   IsBatteryLowCondition() = delete;
-
-//   BT::NodeStatus tick() override;
-
-//   static BT::PortsList providedPorts()
-//   {
-//     return {
-//       BT::InputPort<double>("min_battery", "Minimum battery percentage/voltage"),
-//       BT::InputPort<std::string>(
-//         "battery_topic", std::string("/battery_status"), "Battery topic"),
-//       BT::InputPort<bool>(
-//         "is_voltage", false, "If true voltage will be used to check for low battery"),
-//     };
-//   }
-
-// private:
-//   void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
-
-//   rclcpp::Node::SharedPtr node_;
-//   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
-//   std::string battery_topic_;
-//   double min_battery_;
-//   bool is_voltage_;
-//   bool is_battery_low_;
-//   std::mutex mutex_;
-// };
-
-// }
-
-// #endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_CRATE_DETECTED_CONDITION_HPP_
