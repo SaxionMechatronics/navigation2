@@ -36,16 +36,16 @@ namespace nav2_behavior_tree
 CrateDetectedCondition::CrateDetectedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
-  // laser_topic_("scan"),
-  // crate_measure_legnth_(0.60),
+: BT::ConditionNode(condition_name, conf),
+  crate_measure_length_(0.50)
   // crate_measure_width_(0.40),
   // offset_(2)
+  // laser_topic_("scan"),
   // tolerance_(0.02)
   // is_crate_found_(false)
 {
+  getInput("crate_measure_length", crate_measure_length_);
   // getInput("laser_topic", laser_topic_);
-  // getInput("crate_measure_legnth", crate_measure_legnth_);
   // getInput("crate_measure_width", crate_measure_width_);
   // getInput("offset", offset_);
   // getInput("tolerance", tolerance_);
@@ -62,17 +62,27 @@ CrateDetectedCondition::CrateDetectedCondition(
 
 BT::NodeStatus CrateDetectedCondition::tick()
 {
-//   lock is used for thread safety
+  //lock is used for thread safety
   std::lock_guard<std::mutex> lock(mutex_);
-  RCLCPP_WARN_ONCE(node_->get_logger(), "Crate detector has been ticked");
+  try{
+    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] is ticked");
+    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] Crate length is: %d meter", crate_measure_length_);
 
-  // CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
-  if (true) { //is_crate_found_
-    // TODO(anyone): send nav_goal to start pose
-    // NOTE: already happens at the end of the callback, but is this desirable at the end of the callback?
-    // CrateDetectedCondition::publishNavGoal(crate_front_pose_);
-    return BT::NodeStatus::SUCCESS;
-  } else {
+    // CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
+    if (false) { //is_crate_found_
+      // TODO(anyone): send nav_goal to start pose
+      // NOTE: already happens at the end of the callback, but is this desirable at the end of the callback?
+      // CrateDetectedCondition::publishNavGoal(crate_front_pose_);
+      RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] SUCCESS");
+      return BT::NodeStatus::SUCCESS;
+    } else {
+      RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] FAILURE");
+      return BT::NodeStatus::FAILURE;
+    }
+  } catch (const std::exception& e)
+  {
+    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] FAILURE");
+    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] exception: %s", e);
     return BT::NodeStatus::FAILURE;
   }
 }

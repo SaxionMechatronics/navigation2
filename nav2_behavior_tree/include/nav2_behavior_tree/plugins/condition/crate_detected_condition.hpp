@@ -21,12 +21,11 @@
 #include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
+#include "behaviortree_cpp_v3/condition_node.h"
+
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_broadcaster.h"
-
 #include "sensor_msgs/msg/laser_scan.hpp"
-
-#include "behaviortree_cpp_v3/condition_node.h"
 
 namespace nav2_behavior_tree
 {
@@ -43,9 +42,8 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return{
-      // BT::InputPort<double>("crate_measure_legnth", 0.6,
-      // "Length of the crate to search for (in meters"),
+    return { 
+      BT::InputPort<double>("crate_measure_length", "Length of the crate to search for (in meters)"),
 
       // BT::InputPort<double>("crate_measure_width", 0.4,
       // "Width of the crate to search for (in meters)"),
@@ -67,28 +65,28 @@ public:
   }
 
 private:
-  // void laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
-  // std::vector<float> arange(float start, float end, float increment);
-  // std::vector<geometry_msgs::msg::Vector3> polarToCartesian(sensor_msgs::msg::LaserScan::SharedPtr msg);
-  // std::vector<geometry_msgs::msg::Vector3> findCorners(std::vector<geometry_msgs::msg::Vector3> cartesian_sensor_data);
+  void laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
+  std::vector<float> arange(float start, float end, float increment);
+  std::vector<geometry_msgs::msg::Vector3> polarToCartesian(sensor_msgs::msg::LaserScan::SharedPtr msg);
+  std::vector<geometry_msgs::msg::Vector3> findCorners(std::vector<geometry_msgs::msg::Vector3> cartesian_sensor_data);
   geometry_msgs::msg::PoseStamped findCrate(std::vector<geometry_msgs::msg::Vector3> corner_locations_in_laser_frame);
-  // void broadcastCrateToTFTree(geometry_msgs::msg::PoseStamped);
-  // void publishNavGoal(geometry_msgs::msg::PoseStamped);
+  void broadcastCrateToTFTree(geometry_msgs::msg::PoseStamped);
+  void publishNavGoal(geometry_msgs::msg::PoseStamped);
 
   rclcpp::Node::SharedPtr node_;
-  // rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;  // is this type right??
-  // std::shared_ptr<tf2_ros::Buffer> tf_;
-  // std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;  // is this type right??
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
-  // std::string laser_topic_;
-  // geometry_msgs::msg::PoseStamped nav_goal_;
-  // geometry_msgs::msg::PoseStamped crate_front_pose_;
-  // double crate_measure_legnth_;
-  // double crate_measure_width_;
-  // double offset_;
-  // // double tolerance_;
-  // bool is_crate_found_;
-  // bool broadcast_crate_;
+  std::string laser_topic_;
+  geometry_msgs::msg::PoseStamped nav_goal_;
+  geometry_msgs::msg::PoseStamped crate_front_pose_;
+  double crate_measure_length_;
+  double crate_measure_width_;
+  double offset_;
+  // double tolerance_;
+  bool is_crate_found_;
+  bool broadcast_crate_;
   std::mutex mutex_;
 };
 } // namespace nav2_behavior_tree

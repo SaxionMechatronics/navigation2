@@ -11,7 +11,7 @@
       <PipelineSequence name="NavigateWithReplanning">
         
         <RateController hz="1.0">
-          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+          <RecoveryNode number_of_retries="10" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
@@ -20,9 +20,10 @@
 <!-- added section  -->
 <!-- at the end of the file the original structure can be found -->
         <RateController hz="1.0">
-          <RecoveryNode number_of_retries="10" name="CrateDetected">
-            <CrateDetected />  <!--laser_topic="{/scan}" crate_measure_legnth="0.6" crate_measure_width="0.4" offset="2" tolerance="0.02"-->
+          <RecoveryNode number_of_retries="1" name="CrateDetected">
+            <CrateDetected crate_measure_length="{0.6}"/> <!--  crate_measure_width="0.4" offset="2" laser_topic="{/scan}" tolerance="0.02"-->
             <FollowPath path="{path}" controller_id="FollowPath"/>
+            <!-- <Spin spin_dist="1.57"/> -->
           </RecoveryNode>
         </RateController>
 <!-- end of added section -->
