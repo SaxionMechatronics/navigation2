@@ -14,13 +14,11 @@
 // limitations under the License.
 
 #include <string>
-// #include <math.h>       /* cos & sin */
 #include <cmath>
 #include <vector>
 #include <memory>
 
 #include <tf2/LinearMath/Quaternion.h>
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -37,115 +35,149 @@ CrateDetectedCondition::CrateDetectedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  crate_measure_length_(0.50)
-  // crate_measure_width_(0.40),
-  // offset_(2)
-  // laser_topic_("scan"),
-  // tolerance_(0.02)
-  // is_crate_found_(false)
+  // a_(9)
+  crate_measure_length_(60),
+  crate_measure_width_(0.40),
+  offset_(2),
+  tolerance_(0.02),
+  laser_topic_("scan"),
+  is_crate_found_(false),
+  debugging_(true)
 {
-  getInput("crate_measure_length", crate_measure_length_);
-  // getInput("laser_topic", laser_topic_);
-  // getInput("crate_measure_width", crate_measure_width_);
-  // getInput("offset", offset_);
-  // getInput("tolerance", tolerance_);
-  // bool is_crate_found_ = false;
-
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  // tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
-  // laser_sub_ = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-  //   laser_topic_,
-  //   rclcpp::SystemDefaultsQoS(),
-  //   std::bind(&CrateDetectedCondition::laserCallback, this, std::placeholders::_1));
+  laser_sub_ = node_->create_subscription<sensor_msgs::msg::LaserScan>(
+    laser_topic_,
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&CrateDetectedCondition::laserCallback, this, std::placeholders::_1));
+
+  RCLCPP_INFO(node_->get_logger(), "[Crate detector][constructor] Constructing detection node");
+  // getInput("a", a_);
+  getInput("crate_measure_length", crate_measure_length_);
+  getInput("crate_measure_width", crate_measure_width_);
+  getInput("offset", offset_);
+  getInput("tolerance", tolerance_);
+  getInput("laser_topic", laser_topic_);
+  is_crate_found_ = false;
+  // activate_docking_ = false;
 }
+
+/* TODO(Kevin):
+    - make crate found variable
+      - set true when crate is found and nav_goal is published
+    - when crate found == true, do not execute sensor callback anymore
+      - just return status::success and set activate_docking variable high on bb.
+*/
 
 BT::NodeStatus CrateDetectedCondition::tick()
 {
   //lock is used for thread safety
   std::lock_guard<std::mutex> lock(mutex_);
-  try{
-    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] is ticked");
-    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] Crate length is: %d meter", crate_measure_length_);
 
-    // CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
-    if (false) { //is_crate_found_
-      // TODO(anyone): send nav_goal to start pose
-      // NOTE: already happens at the end of the callback, but is this desirable at the end of the callback?
-      // CrateDetectedCondition::publishNavGoal(crate_front_pose_);
-      RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] SUCCESS");
-      return BT::NodeStatus::SUCCESS;
-    } else {
-      RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] FAILURE");
-      return BT::NodeStatus::FAILURE;
-    }
-  } catch (const std::exception& e)
-  {
-    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] FAILURE");
-    RCLCPP_WARN_ONCE(node_->get_logger(), "[Crate detector] exception: %s", e);
+  // NOTE: the int in received as expecter from the blackboard, the float on the other hand is filled in by the default at the top of the file!
+  // TODO(Kevin): sort out why and how to fix
+  if(debugging_){
+    //TODO(Kevin): use cout to check if logging goes well!
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] is ticked");
+    // RCLCPP_WARN(node_->get_logger(), "[Crate detector][tick] A is: %i", a_);
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] Crate length is: %1.2f meter", crate_measure_length_);
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] Crate width is: %1.2f meter", crate_measure_width_);
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] Offset is: %1.2f meter", offset_);
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] Tolerance is: %1.2f meter", tolerance_);
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] Laser scan topic is: %s", laser_topic_.c_str());
+  }
+  // is_crate_found_ = true;
+  if (is_crate_found_) {
+    // TODO(Kevin): send nav_goal to start pose
+    // NOTE: already happens at the end of the callback, but is this desirable at the end of the callback?
+    // CrateDetectedCondition::publishNavGoal(crate_front_pose_);
+    // setOutput("activate_docking", 1); 
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] SUCCESS");
+    return BT::NodeStatus::SUCCESS;
+  } else {
+    // setOutput("activate_docking", 0);
+    RCLCPP_INFO(node_->get_logger(), "[Crate detector][tick] FAILURE");
+    // setOutput("activate_docking", false);
     return BT::NodeStatus::FAILURE;
   }
 }
 
-// // TODO(anyone): Note: maby make this a controller module or seperate thread
-// // which is called from here to increase the sequence time of the BT
-// void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg)
-// {
-//   std::lock_guard<std::mutex> lock(mutex_);
-//   RCLCPP_WARN_ONCE(node_->get_logger(), "Crate detector callback is activated");
-//   is_crate_found_ = true;
-//   msg->range_max = 0; 
-//   std::vector<geometry_msgs::msg::Vector3> cartesian_sensor_data = CrateDetectedCondition::polarToCartesian(msg);
+// TODO(anyone): Note: maby make this a controller module or seperate thread
+// which is called from here to increase the sequence time of the BT
+void CrateDetectedCondition::laserCallback(sensor_msgs::msg::LaserScan::SharedPtr msg)
+{
+  auto b = msg; // did this to supress "unused variable" error at compile time
+  std::lock_guard<std::mutex> lock(mutex_);
+  RCLCPP_INFO_ONCE(node_->get_logger(), "[Crate detector][laserCallback] Callback is activated");
+  RCLCPP_INFO(node_->get_logger(), "[Crate detector][laserCallback] Searching for crate in laser data");
 
-//   std::vector<geometry_msgs::msg::Vector3> corner_locations_in_laser_frame = CrateDetectedCondition::findCorners(cartesian_sensor_data);
+  // TODO(Kevin):Activate logic
+  is_crate_found_ = true;
+  // msg->range_max = 0; 
 
-//   geometry_msgs::msg::PoseStamped crate_front_pose_ = CrateDetectedCondition::findCrate(corner_locations_in_laser_frame);
+  std::vector<geometry_msgs::msg::Vector3> cartesian_sensor_data = CrateDetectedCondition::polarToCartesian(msg); 
 
-//   if(broadcast_crate_){
-//     CrateDetectedCondition::broadcastCrateToTFTree(crate_front_pose_);
-//     is_crate_found_ = true;
-//   }
-//   // TODO(anyone): isolate logic and build a env to test and maby plot the corner locations
-// }
+  // std::vector<geometry_msgs::msg::Vector3> corner_locations_in_laser_frame = CrateDetectedCondition::findCorners(cartesian_sensor_data);
 
-// /* 
-//   function to make ranges with certain incremental value
-//    NOTE: keep in mind that the the list returned
-//    could be one slot smaller than the list with ranges.
-//    TODO(anyone): check if temp_value start at 0 or at the first increment value???
-//    TODO(anyone): list al member function in hpp file
-// */
+  // geometry_msgs::msg::PoseStamped crate_front_pose_ = CrateDetectedCondition::findCrate(corner_locations_in_laser_frame);
+
+  // if(broadcast_crate_){
+  //   CrateDetectedCondition::broadcastCrateToTFTree(crate_front_pose_);
+  //   is_crate_found_ = true;
+  // }
+  // TODO(anyone): isolate logic and build a env to test and maby plot the corner locations
+}
+
+/* 
+  function to make ranges with certain incremental value
+   NOTE: keep in mind that the the list returned
+   could be one slot smaller than the list with ranges.
+   TODO(anyone): check if temp_value start at 0 or at the first increment value???
+   TODO(anyone): list al member function in hpp file
+*/
 // std::vector<float> CrateDetectedCondition::arange(float start, float end, float increment)
 // {
+//   if(debugging_){
+//     RCLCPP_WARN(node_->get_logger(), "[Crate detector][arange] The arguments for arrange are: start: %f, stop: %f, increments: %f", start, end, increment);
+//   }
 //   double steps = ((end - start) / increment);
-//   std::vector<float> temp_list;
+//   std::vector<float> temp_vector;
 //   float temp_value = start;
 //   for(int i = 0; i <= steps; i++) {
-//       // temp_list(i) = temp_value;
-//       temp_list.push_back(temp_value);
-//       temp_value += increment;
+//     temp_vector[i] = temp_value;
+//     temp_vector.push_back(temp_value);
+//     temp_value += increment;
+//     if(false){ //debugging_
+//       RCLCPP_WARN(node_->get_logger(), "[Crate detector][arange] The vector[%i] is: %f", i, temp_value);
+//     }
 //   }
-//   return temp_list;
+//   return temp_vector;
 // }
 
-// std::vector<geometry_msgs::msg::Vector3> CrateDetectedCondition::polarToCartesian(sensor_msgs::msg::LaserScan::SharedPtr msg)
-// {
-//   std::vector<float> thetha = CrateDetectedCondition::arange(msg->angle_min, msg->angle_max, msg->angle_increment);
-//   std::vector<geometry_msgs::msg::Vector3> temp_coordinates; // coordinates in meters
+std::vector<geometry_msgs::msg::Vector3> CrateDetectedCondition::polarToCartesian(sensor_msgs::msg::LaserScan::SharedPtr msg)
+{
+  std::vector<float> thetha = CrateDetectedCondition::arange(msg->angle_min, msg->angle_max, msg->angle_increment);
+  std::vector<geometry_msgs::msg::Vector3> temp_coordinates; // coordinates in meters
 
-//   // convert polar to cartesian
-//   for(long unsigned int i = 0; i <= (thetha.size()-1); i++) {
-//     float xc = msg->ranges[i] * cos(thetha[i]);
-//     float yc = msg->ranges[i] * sin(thetha[i]);
-//     geometry_msgs::msg::Vector3 tmp;
-//     tmp.set__x(xc);
-//     tmp.set__y(yc);
-//     tmp.set__z(0);
-//     temp_coordinates.push_back(tmp);
-//   }
-
-//   return temp_coordinates;
-// }
+  // convert polar to cartesian
+  for(long unsigned int i = 0; i <= (thetha.size()-1); i++) {
+    float xc = msg->ranges[i] * cos(thetha[i]);
+    float yc = msg->ranges[i] * sin(thetha[i]);
+    geometry_msgs::msg::Vector3 tmp;
+    tmp.set__x(xc);
+    tmp.set__y(yc);
+    tmp.set__z(0);
+    temp_coordinates.push_back(tmp);
+    if(debugging_){ //debugging_
+      RCLCPP_WARN(node_->get_logger(), "[Crate detector][polarToCartesian] xc: %f, yc: %f", xc, yc);
+      float size_thetha = thetha.size();
+      float size_temp_coord = temp_coordinates.size();
+      RCLCPP_WARN(node_->get_logger(), "[Crate detector][polarToCartesian] length of lists thetha: %f, temp_coordinates: %f", size_thetha, size_temp_coord );
+    }
+  }
+  return temp_coordinates;
+}
 
 // std::vector<geometry_msgs::msg::Vector3> findCorners(std::vector<geometry_msgs::msg::Vector3> cartesian_sensor_data)
 // {
@@ -232,7 +264,8 @@ BT::NodeStatus CrateDetectedCondition::tick()
 //       crate_front_plane_in_scan_frame.pose.orientation.y = qt.y();
 //       crate_front_plane_in_scan_frame.pose.orientation.z = qt.z();
 //       broadcast_crate_ = true;
-//     } else if((crate_measure_legnth_ - tolerance_) >= temp && temp <= (crate_measure_legnth_ + tolerance_)) {
+//       is_crate_found_ = true;
+//     } else if((crate_measure_length_ - tolerance_) >= temp && temp <= (crate_measure_length_ + tolerance_)) {
 //       RCLCPP_WARN_ONCE(node_->get_logger(), "Long side of the crate found, drive around to the short side!");
 //       is_crate_found_ = false;
 //       broadcast_crate_ = false;

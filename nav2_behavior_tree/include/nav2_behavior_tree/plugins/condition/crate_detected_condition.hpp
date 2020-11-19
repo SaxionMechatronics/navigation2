@@ -26,6 +26,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -43,22 +44,16 @@ public:
   static BT::PortsList providedPorts()
   {
     return { 
+      // NOTE: do not use floats here, the cause some weird error when parsing
+      // BT::InputPort<int>("a", "Bla"),
       BT::InputPort<double>("crate_measure_length", "Length of the crate to search for (in meters)"),
-
-      // BT::InputPort<double>("crate_measure_width", 0.4,
-      // "Width of the crate to search for (in meters)"),
-
-      // BT::InputPort<double>("offset", 2,
-      // "Offset of nav_goal to crate (in meters)"),
-
-      // BT::InputPort<std::string>("laser_topic_", 
-      // std::string("scan"), "laser scanner topic"),
-
-      // BT::InputPort<std::string>("tolerance_", 
-      // std::string("tolerance"), "Tolerance for crate location (in meters)"),
-
-      // BT::InputPort<bool>(
-        // "is_crate_found", false, "If the crate is found this will be true).
+      BT::InputPort<double>("crate_measure_width", "Width of the crate to search for (in meters)"),
+      BT::InputPort<double>("offset", "Offset of nav_goal to crate (in meters)"),
+      BT::InputPort<double>("tolerance", "Tolerance for crate location (in meters)"),
+      BT::InputPort<std::string>("laser_topic", std::string("scan"), "laser scanner topic"),
+      // BT::OutputPort<bool>("activate_docking", "Set high to activate docking"),
+      
+      // BT::InputPort<bool>("is_crate_found", false, "If the crate is found this will be true")
         // TODO(anyone): implement is_crate_found for faster sequence times
         // when crate is already found earlier
     };
@@ -78,15 +73,18 @@ private:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
-  std::string laser_topic_;
   geometry_msgs::msg::PoseStamped nav_goal_;
   geometry_msgs::msg::PoseStamped crate_front_pose_;
+  // int a_;
   double crate_measure_length_;
   double crate_measure_width_;
   double offset_;
-  // double tolerance_;
+  double tolerance_;
+  std::string laser_topic_;
   bool is_crate_found_;
   bool broadcast_crate_;
+  // bool activate_docking_;
+  bool debugging_ = false;
   std::mutex mutex_;
 };
 } // namespace nav2_behavior_tree
