@@ -126,7 +126,6 @@ list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
 
-
 add_library(nena_crate_detection_condition_bt_node SHARED plugins/condition/crate_detected_condition.cpp)
 list(APPEND plugin_libs nena_crate_detection_condition_bt_node)
 
