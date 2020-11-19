@@ -1,0 +1,10 @@
+To recreate so file not found error do as followed:
+
+1. Clone bt-devel branch of Saxion Mechatronics its Nav2 repo into workspace.
+2. Source nav2_dependencies
+3. Colcon build --symlink-install
+4. Source workspace and ros foxy underlay.
+5. Execute "ros2 launch nav2_bringup tb3_test_launch.py |& tee runtime_log.txt"
+5.1 The part behind the pipeline '|' is to safe the output into a text file with the name runtime_log.txt.
+6. Set the initial pose of the robot in RVIZ.
+7. Check the output on the console or inside runtime_log.txt.
