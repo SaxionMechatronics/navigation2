@@ -85,6 +85,7 @@ private:
   bool broadcast_crate_;
   // bool activate_docking_;
   bool debugging_ = false;
+  int callback_count_;
   std::mutex mutex_;
 };
 } // namespace nav2_behavior_tree
