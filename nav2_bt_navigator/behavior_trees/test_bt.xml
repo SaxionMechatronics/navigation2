@@ -1,70 +1,33 @@
-
-<!--
-  This Behavior Tree replans the global path periodically at 1 Hz and it also has
-  recovery actions.
--->
+<!-- BT written in conventions given by ros2 navigation2 -->
 
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-      
+
       <PipelineSequence name="NavigateWithReplanning">
-        
-        <RateController hz="1.0">
-          <RecoveryNode number_of_retries="10" name="ComputePathToPose">
-            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </RecoveryNode>
-        </RateController>
 
-<!-- added section  -->
-<!-- at the end of the file the original structure can be found -->
-        <RateController hz="1.0">
-          <RecoveryNode number_of_retries="1" name="CrateDetected">
-            <CrateDetected crate_measure_length="{0.6}"/> <!--  crate_measure_width="0.4" offset="2" laser_topic="{/scan}" tolerance="0.02"-->
-            <FollowPath path="{path}" controller_id="FollowPath"/>
-            <!-- <Spin spin_dist="1.57"/> -->
-          </RecoveryNode>
-        </RateController>
-<!-- end of added section -->
-
-
-        <!-- <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
-          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
-        </RecoveryNode> -->
-
-      </PipelineSequence>
-
-      <ReactiveFallback name="RecoveryFallback">
-        <GoalUpdated/>
-        <SequenceStar name="RecoveryActions">
-          <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
-          <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-          <Spin spin_dist="1.57"/>
-          <Wait wait_duration="2"/>
-        </SequenceStar>
-      </ReactiveFallback>
-    </RecoveryNode>
-  </BehaviorTree>
-</root>
-
-
-<!-- Example:
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
-    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-      <PipelineSequence name="NavigateWithReplanning">
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
         </RateController>
-        <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
-          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
-        </RecoveryNode>
+
+        <RateController hz="1.0">
+          <RecoveryNode number_of_retries="1" name="CrateDetected">
+            <CrateDetected crate_measure_length="0.60" crate_measure_width="0.40" offset="2" tolerance="0.02" laser_topic="{/scan}" activate_docking="{activate_docking}"/>
+            <FollowPath path="{path}" controller_id="FollowPath"/>
+          </RecoveryNode>
+        </RateController>
+
+        <!-- <RateController hz="1.0"> -->
+          <!-- <RecoveryNode number_of_retries="1" name="Docking"> -->
+            <!-- <Docking activate_docking="{activate_docking}"/> -->
+            <!-- <Spin spin_dist="1.57"/> -->
+            <!-- <FollowPath path="{path}" controller_id="FollowPath"/> -->
+          <!-- </RecoveryNode> -->
+        <!-- </RateController> -->
+
       </PipelineSequence>
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
@@ -78,4 +41,3 @@
     </RecoveryNode>
   </BehaviorTree>
 </root>
--->

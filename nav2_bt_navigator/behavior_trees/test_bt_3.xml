@@ -1,0 +1,55 @@
+<!-- My custom made, hand written bt in nav2 conventions -->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+        <Sequence>
+
+            <RateController hz="1.0">
+                <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+                    <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+                    <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+                </RecoveryNode>
+            </RateController>
+
+            <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
+
+            <RateController hz="1.0">
+                <RecoveryNode number_of_retries="1" name="FollowPath">
+                    <FollowPath path="{truncated_path}" controller_id="FollowPath"/>
+                    <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+                </RecoveryNode>
+            </RateController>
+
+           <RateController hz="1.0">
+                <Sequence name="NavigateWithDocking">
+                    <!-- TODO: make crate detection post goal or path to BB -->
+                    <!-- TODO: if crate detect sets new goal, update path! If crate detect sets new path, use this path in FollowPath(docking) -->
+                    <CrateDetected crate_measure_length="0.60" crate_measure_width="0.40" offset="2" tolerance="0.02" laser_topic="{/scan}" /> 
+                    <!-- <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/> -->
+
+                    <!-- Wait is added to show that the last part of the path is driven by a different controller  -->
+                    <!-- <Docking /> -->
+                    <Spin spin_dist="1.57"/>
+                    <!-- <Wait wait_duration="5"/> -->
+                    <RecoveryNode number_of_retries="1" name="FollowPath">
+                         <FollowPath path="{path}" controller_id="FollowPath"/>        <!-- to test the bt this module should be active -->
+                        <!-- <FollowPath path="{path}" controller_id="Docking"/> -->   <!-- to test the Docking module this should be active -->
+                        <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+                    </RecoveryNode>
+                </Sequence>
+            </RateController>
+        </Sequence> 
+
+        <ReactiveFallback name="RecoveryFallback">
+            <GoalUpdated/>
+            <SequenceStar name="RecoveryActions">
+                <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+                <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+                <Spin spin_dist="1.57"/>
+                <Wait wait_duration="5"/>
+            </SequenceStar>
+        </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

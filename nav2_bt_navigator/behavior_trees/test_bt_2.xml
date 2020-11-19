@@ -1,0 +1,74 @@
+<!-- BT made with Groot and the conventions of BehaviorTree.CPP v3 -->
+
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <Decorator ID="RateController" hz="1">
+            <Sequence>
+                <Control ID="RecoveryNode" number_of_retries="1">
+                    <Action ID="ComputePathToPose" goal="{goal}" path="{path}" planner_id="GridBased"/>
+                    <Action ID="ClearEntireCostmap" service_name="global_costmap/clear_entirely_global_costmap"/>
+                </Control>
+                <Action ID="TruncatePath" distance="1" input_path="{path}" output_path="{truncate_path}"/>
+                <Control ID="RecoveryNode" number_of_retries="2">
+                    <Action ID="FollowPath" controller_id="FollowPath" path="{truncate_path}"/>
+                    <Action ID="ClearEntireCostmap" service_name="global_costmap/clear_entirely_global_costmap"/>
+                </Control>
+                <Sequence>
+                    <Condition ID="CrateDetected"  crate_measure_length="0.6" crate_measure_width="0.4" laser_topic="scan" offset="2" tolerance="0.02"/>
+                    <!-- activate_docking="{activate_docking}" -->
+                    <Action ID="DockingAction" />
+                    <!-- activate_docking="{activate_docking}" -->
+                </Sequence>
+            </Sequence>
+        </Decorator>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="ClearEntireCostmap">
+            <input_port name="service_name"/>
+        </Action>
+        <Action ID="ComputePathToPose">
+            <input_port name="goal"/>
+            <output_port name="path"/>
+            <input_port default="GridBased" name="planner_id"/>
+        </Action>
+        <Condition ID="CrateDetection">
+	    	<input_port name="crate_measure_length"/>
+    	  	<input_port name="crate_measure_width"/>
+    	    <input_port name="offset"/>
+    	    <input_port name="tolerance"/>
+    	    <input_port name="laser_topic"/>
+    	    <output_port name="activate_docking"/>
+        </Condition>
+        <Action ID="DockingAction"/>
+        <Action ID="FollowPath">
+            <input_port default="FollowPath" name="controller_id"/>
+            <input_port name="path"/>
+        </Action>
+        <Condition ID="GoalUpdated"/>
+        <Condition ID="GoalUpdater"/>
+        <Control ID="PipelineSequence"/>
+        <Decorator ID="RateController">
+            <input_port name="hz"/>
+        </Decorator>
+        <Control ID="RecoveryNode">
+            <input_port name="number_of_retries"/>
+        </Control>
+        <Control ID="RoundRobin"/>
+        <Action ID="Spin">
+            <input_port name="spin_dist"/>
+        </Action>
+        <Action ID="TruncatePath">
+            <input_port name="distance"/>
+            <input_port name="input_path"/>
+            <output_port name="truncated_path"/>
+        </Action>
+        <Action ID="Wait">
+            <input_port name="wait_duration"/>
+        </Action>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+
