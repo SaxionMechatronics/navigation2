@@ -53,7 +53,7 @@ bt_navigator:
     global_frame: map
     robot_base_frame: base_link
     odom_topic: /odom
-    default_bt_xml_filename: "test_bt.xml"
+    default_bt_xml_filename: "test_bt_3.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
     - nav2_follow_path_action_bt_node
@@ -65,7 +65,6 @@ bt_navigator:
     - nav2_goal_reached_condition_bt_node
     - nav2_goal_updated_condition_bt_node
     - nav2_initial_pose_received_condition_bt_node
-    - nav2_crate_detection_condition_bt_node
     - nav2_reinitialize_global_localization_service_bt_node
     - nav2_rate_controller_bt_node
     - nav2_distance_controller_bt_node
@@ -78,6 +77,9 @@ bt_navigator:
     - nav2_transform_available_condition_bt_node
     - nav2_time_expired_condition_bt_node
     - nav2_distance_traveled_condition_bt_node
+    # NeNa modules
+    - nena_crate_detection_condition_bt_node
+    - nena_docking_action_bt_node
 
 bt_navigator_rclcpp_node:
   ros__parameters:
@@ -92,7 +94,7 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
     goal_checker_plugin: "goal_checker"
-    controller_plugins: ["FollowPath"]
+    controller_plugins: ["FollowPath", "Docking"]
 
     # Progress checker parameters
     progress_checker:
@@ -147,6 +149,14 @@ controller_server:
       RotateToGoal.scale: 32.0
       RotateToGoal.slowing_factor: 5.0
       RotateToGoal.lookahead_time: -1.0
+    Docking:
+      plugin: "nena_docking_controller::DockingController"
+      debug_trajectory_details: True
+      desired_linear_vel: 0.2
+      lookahead_dist: 0.4
+      max_angular_vel: 1.0
+      transform_tolerance: 1.0
+
 
 controller_server_rclcpp_node:
   ros__parameters:

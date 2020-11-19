@@ -17,6 +17,8 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nena_msgs REQUIRED)
+
 
 nav2_package()
 
@@ -41,6 +43,7 @@ set(dependencies
   std_msgs
   std_srvs
   nav2_util
+  nena_msgs
 )
 
 add_library(${library_name} SHARED
@@ -93,9 +96,6 @@ list(APPEND plugin_libs nav2_initial_pose_received_condition_bt_node)
 add_library(nav2_is_battery_low_condition_bt_node SHARED plugins/condition/is_battery_low_condition.cpp)
 list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
 
-add_library(nav2_crate_detection_condition_bt_node SHARED plugins/condition/crate_detected_condition.cpp)
-list(APPEND plugin_libs nav2_crate_detection_condition_bt_node)
-
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 
@@ -125,6 +125,13 @@ list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
+
+
+add_library(nena_crate_detection_condition_bt_node SHARED plugins/condition/crate_detected_condition.cpp)
+list(APPEND plugin_libs nena_crate_detection_condition_bt_node)
+
+add_library(nena_docking_action_bt_node SHARED plugins/action/docking_action.cpp)
+list(APPEND plugin_libs nena_docking_action_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
